@@ -41,6 +41,21 @@ export class TimeGridCalendarCard extends LitElement {
     }
     .wrapper {
       position: relative;
+      block-size: var(--tgcc-height, 520px); /* card height for internal scroll */
+    }
+    /* FullCalendar theming via CSS vars, applied on our container */
+    .tgcc {
+      /* backgrounds */
+      --fc-page-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
+      --fc-neutral-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
+      --fc-today-bg-color: transparent; /* remove green/brown tint */
+      /* borders + now indicator */
+      --fc-border-color: var(--divider-color, rgba(128,128,128,.3));
+      --fc-now-indicator-color: var(--accent-color, var(--primary-color));
+    }
+    /* Ensure inner scroller can scroll independently */
+    .tgcc .fc-scroller {
+      overflow-y: auto !important;
     }
     .fc .fc-timegrid-slot { /* compact density tweak */ }
     .error {
