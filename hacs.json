@@ -1,6 +1,7 @@
 {
   "name": "Time Grid Calendar Card",
-  "filename": "time-grid-calendar-card.js",
+  "filename": "TimeGridCalendarCard.js",
+  "content_in_root": false,
   "render_readme": true,
   "homeassistant": "2024.12.0"
 }
