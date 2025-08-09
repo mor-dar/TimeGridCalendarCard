@@ -344,8 +344,10 @@ export class TimeGridCalendarCard extends LitElement {
     this._calendar = new Calendar(this._calendarEl, {
       plugins: [timeGridPlugin, interactionPlugin],
       initialView: 'timeGridDay',
-      headerToolbar: { left: 'prev,next today', center: '', right: '' },
-      navLinks: true,
+      headerToolbar: this._config.todayOnly ? false : { left: 'prev,next today', center: '', right: '' },
+      dayHeaders: !this._config.todayOnly,
+      navLinks: !this._config.todayOnly,
+      initialDate: today,
       height: 'auto',
       expandRows: true,
       stickyHeaderDates: true,
