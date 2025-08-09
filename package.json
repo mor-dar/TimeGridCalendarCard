@@ -1,0 +1,29 @@
+{
+  "name": "time-grid-calendar-card",
+  "version": "0.1.0",
+  "description": "FullCalendar time-grid day view for Home Assistant calendar.* entities",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/time-grid-calendar-card.js",
+  "files": [
+    "dist",
+    "README.md",
+    "hacs.json",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "dev": "npm run watch"
+  },
+  "dependencies": {
+    "@fullcalendar/core": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.15",
+    "@fullcalendar/timegrid": "^6.1.15",
+    "lit": "^3.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.4.5"
+  }
+}
