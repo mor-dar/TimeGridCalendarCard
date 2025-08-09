@@ -30,6 +30,8 @@ export class TimeGridCalendarCard extends LitElement {
   @state() private _error: string | null = null;
   private _calendar?: Calendar;
   private _calendarEl?: HTMLDivElement;
+  private _ro?: ResizeObserver;
+  private _raf?: number;
 
   // cache: key -> { ts, events }
   private _cache = new Map<string, { ts: number; events: EventInput[] }>();
@@ -305,12 +307,21 @@ export class TimeGridCalendarCard extends LitElement {
     `;
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    this._ro = new ResizeObserver(() => {
+      // Init once we have a measurable box
+      if (!this._calendar && this._calendarEl?.offsetParent) this._initCalendar();
+      // Throttle size updates
+      cancelAnimationFrame(this._raf!);
+      this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
+    });
+    this._ro.observe(this);
+  }
+
   protected firstUpdated(): void {
     this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
-    // Defer initialization until hass is set AND the element is visible
-    if (this.hass && this.isConnected && this._calendarEl?.offsetParent) {
-      this._initCalendar();
-    }
+    // Defer init to ResizeObserver rather than doing it immediately
   }
 
   protected willUpdate() {
@@ -320,22 +331,17 @@ export class TimeGridCalendarCard extends LitElement {
   }
   
   protected updated(): void {
-    if (this._calendar && this.hass) {
-      // only tweak options that can really change at runtime
-      const locale = this.hass.locale?.language ?? 'en';
-      const dir = (document?.dir as 'ltr' | 'rtl') || 'ltr';
-      const tz = this.hass.config?.time_zone || 'local';
-      this._calendar.setOption('locale', locale);
-      this._calendar.setOption('direction', dir);
-      this._calendar.setOption('timeZone', tz);
-
-      // Throttle expensive size calc so editor doesn't lock up
-      requestAnimationFrame(() => this._calendar?.updateSize());
-    }
+    if (!this._calendar || !this.hass) return;
+    // Update only cheap options at runtime
+    this._calendar.setOption('locale', this.hass.locale?.language ?? 'en');
+    this._calendar.setOption('direction', (document?.dir as 'ltr' | 'rtl') || 'ltr');
+    this._calendar.setOption('timeZone', this.hass.config?.time_zone || 'local');
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback?.();
+    this._ro?.disconnect();
+    cancelAnimationFrame(this._raf!);
     this._calendar?.destroy();
     this._calendar = undefined;
   }
