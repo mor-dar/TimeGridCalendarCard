@@ -8,15 +8,13 @@ import { Calendar, type EventInput } from '@fullcalendar/core';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import allLocales from '@fullcalendar/core/locales-all';
-import '@fullcalendar/core/index.css';
-import '@fullcalendar/timegrid/index.css';
 
 // Register in card picker
 // @ts-ignore
 (window as any).customCards = (window as any).customCards || [];
 // @ts-ignore
 (window as any).customCards.push({
-  type: 'TimeGridCalendarCard',
+  type: 'custom:TimeGridCalendarCard',
   name: 'Time Grid Calendar Card',
   description: 'FullCalendar time-grid day view for calendar.* entities',
   preview: true,
@@ -48,6 +46,195 @@ export class TimeGridCalendarCard extends LitElement {
     .error {
       color: var(--error-color);
       padding: 8px 16px;
+    }
+    
+    /* Essential FullCalendar styles */
+    .fc {
+      direction: ltr;
+      text-align: left;
+    }
+    .fc table {
+      border-collapse: collapse;
+      border-spacing: 0;
+      font-size: 1em;
+    }
+    .fc th {
+      text-align: center;
+    }
+    .fc th,
+    .fc td {
+      vertical-align: top;
+      padding: 0;
+    }
+    .fc a[data-navlink] {
+      cursor: pointer;
+    }
+    .fc a[data-navlink]:hover {
+      text-decoration: underline;
+    }
+    .fc-direction-ltr {
+      direction: ltr;
+      text-align: left;
+    }
+    .fc-direction-rtl {
+      direction: rtl;
+      text-align: right;
+    }
+    .fc-theme-standard td,
+    .fc-theme-standard th {
+      border: 1px solid var(--fc-border-color, #ddd);
+    }
+    .fc-theme-standard .fc-scrollgrid {
+      border: 1px solid var(--fc-border-color, #ddd);
+    }
+    .fc-theme-standard .fc-scrollgrid-liquid {
+      border-width: 1px 0;
+    }
+    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section > .fc-scrollgrid-section-header > .fc-scrollgrid-section-body,
+    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section > .fc-scrollgrid-section-footer > .fc-scrollgrid-section-body {
+      border-left: 1px solid var(--fc-border-color, #ddd);
+      border-right: 1px solid var(--fc-border-color, #ddd);
+    }
+    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:first-child > .fc-scrollgrid-section-header > .fc-scrollgrid-section-body,
+    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:first-child > .fc-scrollgrid-section-footer > .fc-scrollgrid-section-body {
+      border-top: 1px solid var(--fc-border-color, #ddd);
+    }
+    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:last-child > .fc-scrollgrid-section-header > .fc-scrollgrid-section-body,
+    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:last-child > .fc-scrollgrid-section-footer > .fc-scrollgrid-section-body {
+      border-bottom: 1px solid var(--fc-border-color, #ddd);
+    }
+    .fc-event {
+      position: relative;
+      display: block;
+      font-size: 0.85em;
+      line-height: 1.4;
+      border-radius: 3px;
+      border: 1px solid #3788d8;
+      background-color: #3788d8;
+      color: #fff;
+      cursor: pointer;
+    }
+    .fc-event-harness,
+    .fc-event-harness-abs {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+    }
+    .fc-event-harness > .fc-event,
+    .fc-event-harness-abs > .fc-event {
+      position: relative;
+      z-index: 1;
+    }
+    .fc-event-main {
+      z-index: 2;
+      position: relative;
+    }
+    .fc-event-main-frame {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+    }
+    .fc-event-time {
+      overflow: hidden;
+      font-weight: bold;
+    }
+    .fc-event-title-container {
+      flex-grow: 1;
+      flex-shrink: 1;
+      min-width: 0;
+    }
+    .fc-event-title {
+      display: inline-block;
+      vertical-align: top;
+      left: 0;
+      right: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .fc-timegrid {
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .fc-timegrid-header .fc-scrollgrid-section {
+      height: auto;
+    }
+    .fc-timegrid-header .fc-scrollgrid-section table {
+      height: 100%;
+    }
+    .fc-timegrid-body {
+      position: relative;
+      z-index: 1;
+      flex-grow: 1;
+    }
+    .fc-timegrid-divider {
+      padding: 0 0 2px;
+    }
+    .fc-timegrid-slots {
+      position: relative;
+    }
+    .fc-timegrid-slot {
+      height: 1.5em;
+      border-bottom: 0;
+    }
+    .fc-timegrid-slot:empty:before {
+      content: '\\00a0';
+    }
+    .fc-timegrid-slot-minor {
+      border-top-style: dotted;
+    }
+    .fc-timegrid-slot-label-cushion {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .fc-timegrid-slot-label {
+      vertical-align: middle;
+    }
+    .fc-timegrid-axis-cushion,
+    .fc-timegrid-slot-label-cushion {
+      padding: 0 4px;
+    }
+    .fc-timegrid-axis-frame-liquid {
+      height: 100%;
+    }
+    .fc-timegrid-axis-frame {
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .fc-timegrid-axis-cushion {
+      max-width: 60px;
+      flex-shrink: 0;
+    }
+    .fc-timegrid-now-indicator-line {
+      position: absolute;
+      z-index: 4;
+      left: 0;
+      right: 0;
+      border-style: solid;
+      border-color: red;
+      border-width: 1px 0 0;
+    }
+    .fc-timegrid-now-indicator-arrow {
+      position: absolute;
+      z-index: 4;
+      margin-top: -5px;
+      border-style: solid;
+      border-color: red;
+    }
+    .fc-direction-ltr .fc-timegrid-now-indicator-arrow {
+      left: 0;
+      border-width: 5px 0 5px 6px;
+      border-top-color: transparent;
+      border-bottom-color: transparent;
+    }
+    .fc-direction-rtl .fc-timegrid-now-indicator-arrow {
+      right: 0;
+      border-width: 5px 6px 5px 0;
+      border-top-color: transparent;
+      border-bottom-color: transparent;
     }
   `;
 
