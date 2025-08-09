@@ -277,38 +277,30 @@ export class TimeGridCalendarCard extends LitElement {
 
   protected firstUpdated(): void {
     this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
-    this._initCalendar();
+    // Defer initialization until hass is set AND the element is visible
+    if (this.hass && this.isConnected && this._calendarEl?.offsetParent) {
+      this._initCalendar();
+    }
   }
 
+  protected willUpdate() {
+    if (!this._calendar && this.hass && this._calendarEl?.offsetParent) {
+      this._initCalendar();
+    }
+  }
+  
   protected updated(): void {
-    // On updates (locale/tz/config), adjust calendar options
     if (this._calendar && this.hass) {
+      // only tweak options that can really change at runtime
       const locale = this.hass.locale?.language ?? 'en';
       const dir = (document?.dir as 'ltr' | 'rtl') || 'ltr';
       const tz = this.hass.config?.time_zone || 'local';
-      const opts: any = {
-        locale,
-        locales: allLocales,
-        direction: dir,
-        timeZone: tz,
-        slotMinTime: this._config.minTime,
-        slotMaxTime: this._config.maxTime,
-        slotDuration: this._config.slotDuration,
-        nowIndicator: this._config.nowIndicator,
-        scrollTime: this._config.scrollTime,
-        slotEventOverlap: this._config.slotEventOverlap,
-      };
-      this._calendar.setOption('locale', opts.locale);
-      this._calendar.setOption('locales', opts.locales);
-      this._calendar.setOption('direction', opts.direction);
-      this._calendar.setOption('timeZone', opts.timeZone);
-      this._calendar.setOption('slotMinTime', opts.slotMinTime);
-      this._calendar.setOption('slotMaxTime', opts.slotMaxTime);
-      this._calendar.setOption('slotDuration', opts.slotDuration);
-      this._calendar.setOption('nowIndicator', opts.nowIndicator);
-      this._calendar.setOption('scrollTime', opts.scrollTime);
-      this._calendar.setOption('slotEventOverlap', opts.slotEventOverlap);
-      this._calendar.updateSize();
+      this._calendar.setOption('locale', locale);
+      this._calendar.setOption('direction', dir);
+      this._calendar.setOption('timeZone', tz);
+
+      // Throttle expensive size calc so editor doesn't lock up
+      requestAnimationFrame(() => this._calendar?.updateSize());
     }
   }
 
