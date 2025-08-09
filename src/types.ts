@@ -24,6 +24,8 @@ export interface TimeGridCalendarCardConfig {
   cacheMinutes?: number; // default 10
   suppressDuplicates?: boolean; // default true
   filters?: Record<string, { allow?: string[]; block?: string[] }>; // per calendar regex filters
+  todayOnly?: boolean;        // when true: no toolbar, no date in header, no nav
+  height?: number | string;   // fixed height for scrollable grid (e.g. 520 or "520px")
 }
 
 export interface HACalendarEventStringy {

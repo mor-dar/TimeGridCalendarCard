@@ -254,6 +254,8 @@ export class TimeGridCalendarCard extends LitElement {
       slotEventOverlap: true,
       cacheMinutes: 10,
       suppressDuplicates: true,
+      todayOnly: false,
+      height: 520,
       ...config,
     };
   }
@@ -262,17 +264,13 @@ export class TimeGridCalendarCard extends LitElement {
 
   protected render() {
     return html`
-      <ha-card header="${this._headerText()}">
+      <ha-card>
         ${this._error ? html`<div class="error">${this._error}</div>` : nothing}
         <div class="wrapper">
-          <div id="fc"></div>
+          <div id="fc" class="tgcc"></div>
         </div>
       </ha-card>
     `;
-  }
-
-  private _headerText(): string {
-    return 'Time Grid Calendar';
   }
 
   protected firstUpdated(): void {
@@ -315,11 +313,15 @@ export class TimeGridCalendarCard extends LitElement {
     const locale = this.hass?.locale?.language ?? 'en';
     const dir = (document?.dir as 'ltr' | 'rtl') || 'ltr';
     const tz = this.hass?.config?.time_zone || 'local';
+    
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
     this._calendar = new Calendar(this._calendarEl, {
       plugins: [timeGridPlugin, interactionPlugin],
       initialView: 'timeGridDay',
-      headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+      headerToolbar: { left: 'prev,next today', center: '', right: '' },
       navLinks: true,
       height: 'auto',
       expandRows: true,
@@ -337,6 +339,7 @@ export class TimeGridCalendarCard extends LitElement {
       slotDuration: this._config.slotDuration,
       scrollTime: this._config.scrollTime,
       slotEventOverlap: this._config.slotEventOverlap,
+      validRange: this._config.todayOnly ? { start: startOfToday, end: endOfToday } : undefined,
       eventClick: (info) => this._onEventClick(info),
       eventSources: [
         {
