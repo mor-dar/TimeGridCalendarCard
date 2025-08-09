@@ -11,6 +11,7 @@ FullCalendar **time-grid day** view for Home Assistant's `calendar.*` entities. 
 - **Locale**, **timezone**, and **RTL** respected from HA.
 - Performance: **in-memory cache** for 5–15 min (configurable), in-flight dedupe.
 - Optional **filters** per calendar (allow/block by regex) and **duplicate suppression**.
+- **Today-only mode** to restrict navigation and focus on current day events only.
 - Click an event to open **more-info** for its calendar entity.
 
 ## Quick start
@@ -36,6 +37,7 @@ maxTime: '22:00:00'
 slotDuration: '00:30:00'
 nowIndicator: true
 scrollTime: '07:00:00'
+todayOnly: false
 ```
 
 ### Manual install
@@ -59,6 +61,7 @@ scrollTime: '07:00:00'
 | `slotEventOverlap`   | `boolean`  | `true`       | Allow overlap stacking.                                                                |
 | `cacheMinutes`       | `number`   | `10`         | Cache TTL for the requested window.                                                    |
 | `suppressDuplicates` | `boolean`  | `true`       | Remove duplicate events returned by multiple calendars.                                |
+| `todayOnly`          | `boolean`  | `false`      | Restrict view to today only (prevents navigation to other days).                       |
 | `filters`            | `object`   | –            | Per-calendar `{ allow?: string[]; block?: string[] }` regexes matched against `title`. |
 
 ### Notes
@@ -118,6 +121,7 @@ scrollTime: '07:00:00'
 slotEventOverlap: true
 cacheMinutes: 10
 suppressDuplicates: true
+todayOnly: false
 filters:
   calendar.personal:
     block: ['Private']
