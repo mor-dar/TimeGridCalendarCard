@@ -325,6 +325,14 @@ export class TimeGridCalendarCard extends LitElement {
 
   private _initCalendar(): void {
     if (!this._calendarEl) return;
+    
+    // Set the wrapper height from config
+    if (this._calendarEl) {
+      const h = this._config.height;
+      const px = typeof h === 'number' ? `${h}px` : (h || '520px');
+      (this.querySelector('.wrapper') as HTMLElement)?.style.setProperty('--tgcc-height', px);
+    }
+    
     const locale = this.hass?.locale?.language ?? 'en';
     const dir = (document?.dir as 'ltr' | 'rtl') || 'ltr';
     const tz = this.hass?.config?.time_zone || 'local';
