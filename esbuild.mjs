@@ -12,6 +12,7 @@ const base = {
   target: ['es2020'],
   sourcemap: false,
   logLevel: 'info',
+  loader: { '.css': 'css' },
   external: ['@fullcalendar/core/index.css', '@fullcalendar/timegrid/index.css'],
 };
 
