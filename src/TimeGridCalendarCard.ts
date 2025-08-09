@@ -280,6 +280,23 @@ export class TimeGridCalendarCard extends LitElement {
   protected render() {
     return html`
       <ha-card>
+        <style>
+          /* Make FC inherit HA colors, remove today tint */
+          .tgcc {
+            --fc-page-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
+            --fc-neutral-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
+            --fc-border-color: var(--divider-color, rgba(128, 128, 128, .3));
+            --fc-now-indicator-color: var(--accent-color, var(--primary-color));
+            --fc-today-bg-color: transparent; /* main fix */
+          }
+          /* In case some themes still override via class, force it off */
+          .tgcc .fc-day-today,
+          .tgcc .fc-timegrid-col.fc-day-today { background: transparent !important; }
+
+          /* allow internal vertical scroll */
+          .tgcc .fc-scroller { overflow-y: auto !important; }
+        </style>
+
         ${this._error ? html`<div class="error">${this._error}</div>` : nothing}
         <div class="wrapper">
           <div id="fc" class="tgcc"></div>
