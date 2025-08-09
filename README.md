@@ -24,13 +24,13 @@ FullCalendar **time-grid day** view for Home Assistant's `calendar.*` entities. 
 ```yaml
 type: custom:time-grid-calendar-card
 entities:
-  - calendar.noam
-  - calendar.efrat_and_mor
-  - calendar.lior
+  - calendar.personal
+  - calendar.family
+  - calendar.work
 colors:
-  calendar.noam: '#81C784'
-  calendar.efrat_and_mor: '#9575CD'
-  calendar.lior: '#7986CB'
+  calendar.personal: '#81C784'
+  calendar.family: '#9575CD'
+  calendar.work: '#7986CB'
 minTime: '06:00:00'
 maxTime: '22:00:00'
 slotDuration: '00:30:00'
@@ -65,6 +65,7 @@ scrollTime: '07:00:00'
 
 - Events are fetched via `GET /api/calendars/{entity_id}?start=…&end=…` using `hass.callApi`. We pass FullCalendar's requested window directly.
 - Locale and timezone are taken from `hass.locale` and `hass.config.time_zone`; direction (RTL/LTR) uses the document's `dir` attribute.
+- **Privacy**: All calendar data stays within your Home Assistant instance. No external network requests are made.
 
 ## Development
 
@@ -102,13 +103,13 @@ The bundle is emitted to `dist/time-grid-calendar-card.js`.
 ```yaml
 type: custom:time-grid-calendar-card
 entities:
-  - calendar.noam
-  - calendar.efrat_and_mor
-  - calendar.lior
+  - calendar.personal
+  - calendar.family
+  - calendar.work
 colors:
-  calendar.noam: '#81C784'
-  calendar.efrat_and_mor: '#9575CD'
-  calendar.lior: '#7986CB'
+  calendar.personal: '#81C784'
+  calendar.family: '#9575CD'
+  calendar.work: '#7986CB'
 minTime: '06:00:00'
 maxTime: '22:00:00'
 slotDuration: '00:30:00'
@@ -118,8 +119,8 @@ slotEventOverlap: true
 cacheMinutes: 10
 suppressDuplicates: true
 filters:
-  calendar.noam:
+  calendar.personal:
     block: ['Private']
-  calendar.efrat_and_mor:
+  calendar.family:
     allow: ['.*']
 ````

@@ -289,7 +289,7 @@ export class TimeGridCalendarCard extends LitElement {
   static getStubConfig(): Partial<TimeGridCalendarCardConfig> {
     return {
       type: 'custom:time-grid-calendar-card',
-      entities: ['calendar.family', 'calendar.me'],
+      entities: ['calendar.personal', 'calendar.work'],
       minTime: '06:00:00',
       maxTime: '22:00:00',
       slotDuration: '00:30:00',
