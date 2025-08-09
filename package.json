@@ -1,5 +1,5 @@
 {
-  "name": "time-grid-calendar-card",
+  "name": "TimeGridCalendarCard",
   "version": "0.1.0",
   "description": "FullCalendar time-grid day view for Home Assistant calendar.* entities",
   "license": "MIT",

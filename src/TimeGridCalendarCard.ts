@@ -16,13 +16,13 @@ import '@fullcalendar/timegrid/index.css';
 (window as any).customCards = (window as any).customCards || [];
 // @ts-ignore
 (window as any).customCards.push({
-  type: 'time-grid-calendar-card',
+  type: 'TimeGridCalendarCard',
   name: 'Time Grid Calendar Card',
   description: 'FullCalendar time-grid day view for calendar.* entities',
   preview: true,
 });
 
-@customElement('time-grid-calendar-card')
+@customElement('TimeGridCalendarCard')
 export class TimeGridCalendarCard extends LitElement {
   // --- HA wiring ---
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -288,7 +288,7 @@ export class TimeGridCalendarCard extends LitElement {
   // Lovelace editor stub
   static getStubConfig(): Partial<TimeGridCalendarCardConfig> {
     return {
-      type: 'custom:time-grid-calendar-card',
+      type: 'custom:TimeGridCalendarCard',
       entities: ['calendar.personal', 'calendar.work'],
       minTime: '06:00:00',
       maxTime: '22:00:00',
@@ -301,6 +301,10 @@ export class TimeGridCalendarCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'time-grid-calendar-card': TimeGridCalendarCard;
+    'TimeGridCalendarCard': TimeGridCalendarCard;
   }
+}
+
+if (!customElements.get('TimeGridCalendarCard')) {
+  customElements.define('TimeGridCalendarCard', TimeGridCalendarCard);
 }

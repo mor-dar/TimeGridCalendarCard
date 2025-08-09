@@ -12,7 +12,7 @@ export interface HomeAssistant {
 }
 
 export interface TimeGridCalendarCardConfig {
-  type: string; // 'custom:time-grid-calendar-card'
+  type: string; // 'custom:TimeGridCalendarCard'
   entities: string[]; // calendar entity_ids
   colors?: Record<string, string>; // per-calendar color map
   minTime?: string; // '06:00:00'

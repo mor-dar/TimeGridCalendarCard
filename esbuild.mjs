@@ -4,7 +4,7 @@ const watch = process.argv.includes('--watch');
 
 /** @type {esbuild.BuildOptions} */
 const base = {
-  entryPoints: ['src/time-grid-calendar-card.ts'],
+  entryPoints: ['src/TimeGridCalendarCard.ts'],
   outfile: 'dist/TimeGridCalendarCard.js',
   bundle: true,
   minify: true,

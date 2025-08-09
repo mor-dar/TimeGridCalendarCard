@@ -22,7 +22,7 @@ FullCalendar **time-grid day** view for Home Assistant's `calendar.*` entities. 
 4. Add to a dashboard as **Manual** card:
 
 ```yaml
-type: custom:time-grid-calendar-card
+type: custom:TimeGridCalendarCard
 entities:
   - calendar.personal
   - calendar.family
@@ -40,9 +40,9 @@ scrollTime: '07:00:00'
 
 ### Manual install
 
-1. Download `dist/time-grid-calendar-card.js` from the latest release.
-2. Copy it to `/config/www/time-grid-calendar-card.js`.
-3. Add a Lovelace **resource**: `url: /local/time-grid-calendar-card.js`, `type: module`.
+1. Download `dist/TimeGridCalendarCard.js` from the latest release.
+2. Copy it to `/config/www/TimeGridCalendarCard.js`.
+3. Add a Lovelace **resource**: `url: /local/TimeGridCalendarCard.js`, `type: module`.
 4. Use the YAML above to add the card.
 
 ## Configuration
@@ -75,7 +75,7 @@ npm run build
 npm run dev   # watch mode
 ```
 
-The bundle is emitted to `dist/time-grid-calendar-card.js`.
+The bundle is emitted to `dist/TimeGridCalendarCard.js`.
 
 ## Ship via HACS
 
@@ -91,7 +91,7 @@ The bundle is emitted to `dist/time-grid-calendar-card.js`.
 ## Troubleshooting
 
 - If you see a blank area, check the **browser console** for errors.
-- Verify the Lovelace **resource** path and that `dist/time-grid-calendar-card.js` is present.
+- Verify the Lovelace **resource** path and that `dist/TimeGridCalendarCard.js` is present.
 - Make sure your `calendar.*` entities are providing events for the requested window.
 
 ````
@@ -101,7 +101,7 @@ The bundle is emitted to `dist/time-grid-calendar-card.js`.
 ## Example Lovelace YAML (copy/paste)
 
 ```yaml
-type: custom:time-grid-calendar-card
+type: custom:TimeGridCalendarCard
 entities:
   - calendar.personal
   - calendar.family
