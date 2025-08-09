@@ -20,7 +20,7 @@ import allLocales from '@fullcalendar/core/locales-all';
   preview: true,
 });
 
-@customElement('TimeGridCalendarCard')
+@customElement('time-grid-calendar-card')
 export class TimeGridCalendarCard extends LitElement {
   // --- HA wiring ---
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -488,10 +488,10 @@ export class TimeGridCalendarCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'TimeGridCalendarCard': TimeGridCalendarCard;
+    'time-grid-calendar-card': TimeGridCalendarCard;
   }
 }
 
-if (!customElements.get('TimeGridCalendarCard')) {
-  customElements.define('TimeGridCalendarCard', TimeGridCalendarCard);
+if (!customElements.get('time-grid-calendar-card')) {
+  customElements.define('time-grid-calendar-card', TimeGridCalendarCard);
 }
