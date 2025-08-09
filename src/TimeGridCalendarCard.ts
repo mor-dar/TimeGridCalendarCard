@@ -284,6 +284,7 @@ export class TimeGridCalendarCard extends LitElement {
       <ha-card>
         <style>
           /* Make FC inherit HA colors, remove today tint */
+          .wrapper { block-size: var(--tgcc-height, 520px); }
           .tgcc {
             --fc-page-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
             --fc-neutral-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
@@ -332,6 +333,11 @@ export class TimeGridCalendarCard extends LitElement {
   
   protected updated(): void {
     if (!this._calendar || !this.hass) return;
+    
+    // Set height once after render
+    const h = typeof this._config.height === 'number' ? `${this._config.height}px` : (this._config.height || '520px');
+    (this.querySelector('.wrapper') as HTMLElement)?.style.setProperty('--tgcc-height', h);
+    
     // Update only cheap options at runtime
     this._calendar.setOption('locale', this.hass.locale?.language ?? 'en');
     this._calendar.setOption('direction', (document?.dir as 'ltr' | 'rtl') || 'ltr');
@@ -371,7 +377,7 @@ export class TimeGridCalendarCard extends LitElement {
       dayHeaders: !this._config.todayOnly,
       navLinks: !this._config.todayOnly,
       initialDate: today,
-      height: 'auto',
+      height: '100%',
       expandRows: true,
       stickyHeaderDates: true,
       firstDay: this.hass?.locale?.first_day_of_week ?? 0,
