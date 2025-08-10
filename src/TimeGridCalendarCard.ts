@@ -1,4 +1,4 @@
-import { LitElement, html, css, nothing } from 'lit';
+import { LitElement, html, css, nothing, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant, TimeGridCalendarCardConfig, HACalendarEventStringy as _Hack } from './types';
 import { VERSION, isAllDay, toIso, regexAnyMatch, hashKey } from './utils';
@@ -30,6 +30,7 @@ export class TimeGridCalendarCard extends LitElement {
   @state() private _error: string | null = null;
   private _calendar?: Calendar;
   private _calendarEl?: HTMLDivElement;
+  private _wrapperEl?: HTMLElement;
   private _ro?: ResizeObserver;
   private _raf?: number;
   private _lastW = 0;
@@ -41,6 +42,8 @@ export class TimeGridCalendarCard extends LitElement {
   // cache: key -> { ts, events }
   private _cache = new Map<string, { ts: number; events: EventInput[] }>();
   private _inflight = new Map<string, Promise<EventInput[]>>();
+  private _maxCacheEntries = 50;
+  private _cacheCleanupTimer?: number;
 
   static styles = css`
     ha-card {
@@ -319,48 +322,55 @@ export class TimeGridCalendarCard extends LitElement {
 
   protected firstUpdated(): void {
     this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
+    this._wrapperEl = this.querySelector('.wrapper') as HTMLElement;
     
     // Set up ResizeObserver only once, after first render when elements exist
     if (!this._ro) {
-      this._ro = new ResizeObserver(() => {
-        const box = (this.querySelector('.wrapper') as HTMLElement)?.getBoundingClientRect();
-        if (!box) return;
-
-        const w = Math.round(box.width);
-        const h = Math.round(box.height);
-        if (w === this._lastW && h === this._lastH) return;   // no real change
-
-        this._lastW = w; this._lastH = h;
-
-        // schedule one size update for this frame
-        if (this._raf) cancelAnimationFrame(this._raf);
-        this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
-      });
+      this._ro = new ResizeObserver(this._handleResize);
     }
 
     // observe the WRAPPER only (observing `this` can cascade)
-    const wrapper = this.querySelector('.wrapper') as HTMLElement;
-    if (wrapper && this._ro) {
+    if (this._wrapperEl && this._ro) {
       this._ro.disconnect(); // Disconnect any previous observations
-      this._ro.observe(wrapper);
+      this._ro.observe(this._wrapperEl);
     }
     
     // Initialize calendar after first render when we have all elements
     if (!this._calendar && this.hass && this._calendarEl) {
       this._initCalendar();
     }
+    
+    // Start cache cleanup timer
+    this._startCacheCleanup();
+  }
+
+  private _handleResize = () => {
+    const box = this._wrapperEl?.getBoundingClientRect();
+    if (!box) return;
+
+    const w = Math.round(box.width);
+    const h = Math.round(box.height);
+    if (w === this._lastW && h === this._lastH) return;   // no real change
+
+    this._lastW = w; this._lastH = h;
+
+    // schedule one size update for this frame
+    if (this._raf) cancelAnimationFrame(this._raf);
+    this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
   }
 
   protected willUpdate() {
     // Calendar initialization moved to firstUpdated to avoid timing issues
   }
   
-  protected updated(): void {
+  protected updated(changedProperties: PropertyValues): void {
     if (!this._calendar || !this.hass) return;
     
-    // Set height once after render
-    const h = typeof this._config.height === 'number' ? `${this._config.height}px` : (this._config.height || '520px');
-    (this.querySelector('.wrapper') as HTMLElement)?.style.setProperty('--tgcc-height', h);
+    // Only update height if config changed
+    if (changedProperties.has('_config') && this._wrapperEl) {
+      const h = typeof this._config.height === 'number' ? `${this._config.height}px` : (this._config.height || '520px');
+      this._wrapperEl.style.setProperty('--tgcc-height', h);
+    }
     
     // Update only when options actually change
     const locale = this.hass.locale?.language ?? 'en';
@@ -391,10 +401,17 @@ export class TimeGridCalendarCard extends LitElement {
       cancelAnimationFrame(this._raf);
       this._raf = undefined;
     }
+    if (this._cacheCleanupTimer) {
+      clearInterval(this._cacheCleanupTimer);
+      this._cacheCleanupTimer = undefined;
+    }
     if (this._calendar) {
       this._calendar.destroy();
       this._calendar = undefined;
     }
+    // Clear caches on disconnect
+    this._cache.clear();
+    this._inflight.clear();
   }
 
   private _initCalendar(): void {
@@ -437,17 +454,7 @@ export class TimeGridCalendarCard extends LitElement {
       eventSources: [
         {
           id: 'ha-calendars',
-          events: async (info, success, failure) => {
-            try {
-              const evts = await this._fetchMergedEvents(info.startStr, info.endStr);
-              success(evts);
-            } catch (e: any) {
-              console.error(e);
-              this._error = e?.message ?? String(e);
-              failure(e);
-              this.requestUpdate();
-            }
-          },
+          events: this._handleEventSource,
         },
       ],
     });
@@ -504,8 +511,15 @@ export class TimeGridCalendarCard extends LitElement {
         });
       }
 
-      // Save cache
+      // Save cache with size limit
       this._cache.set(key, { ts: now, events: mapped });
+      
+      // Enforce cache size limit (LRU)
+      if (this._cache.size > this._maxCacheEntries) {
+        const firstKey = this._cache.keys().next().value;
+        this._cache.delete(firstKey);
+      }
+      
       this._inflight.delete(key);
       return mapped;
     })();
@@ -558,6 +572,41 @@ export class TimeGridCalendarCard extends LitElement {
       composed: true,
     });
     this.dispatchEvent(ev);
+  }
+
+  private _handleEventSource = async (info: any, success: Function, failure: Function) => {
+    try {
+      const evts = await this._fetchMergedEvents(info.startStr, info.endStr);
+      success(evts);
+    } catch (e: any) {
+      console.error(e);
+      this._error = e?.message ?? String(e);
+      failure(e);
+      this.requestUpdate();
+    }
+  }
+
+  private _startCacheCleanup(): void {
+    // Clean up expired cache entries every 5 minutes
+    if (this._cacheCleanupTimer) clearInterval(this._cacheCleanupTimer);
+    
+    this._cacheCleanupTimer = window.setInterval(() => {
+      this._cleanupExpiredCache();
+    }, 5 * 60 * 1000);
+    
+    // Initial cleanup
+    this._cleanupExpiredCache();
+  }
+
+  private _cleanupExpiredCache(): void {
+    const now = Date.now();
+    const ttlMs = (this._config?.cacheMinutes ?? 10) * 60 * 1000;
+    
+    for (const [key, cached] of this._cache.entries()) {
+      if (now - cached.ts >= ttlMs) {
+        this._cache.delete(key);
+      }
+    }
   }
 
   // Lovelace editor stub

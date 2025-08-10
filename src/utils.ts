@@ -20,15 +20,27 @@ function normalizeIso(v: string): string {
   return v;
 }
 
+// Cache compiled regexes to avoid recompiling on every call
+const regexCache = new Map<string, RegExp>();
+
 export function regexAnyMatch(patterns: string[] | undefined, text: string): boolean {
   if (!patterns || patterns.length === 0) return false;
   return patterns.some((p) => {
-    try {
-      const re = new RegExp(p, 'i');
-      return re.test(text);
-    } catch {
-      return false;
+    let re = regexCache.get(p);
+    if (!re) {
+      try {
+        re = new RegExp(p, 'i');
+        regexCache.set(p, re);
+        // Limit cache size to prevent memory issues
+        if (regexCache.size > 100) {
+          const firstKey = regexCache.keys().next().value;
+          regexCache.delete(firstKey);
+        }
+      } catch {
+        return false;
+      }
     }
+    return re.test(text);
   });
 }
 
