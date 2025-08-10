@@ -319,31 +319,7 @@ export class TimeGridCalendarCard extends LitElement {
 
   protected firstUpdated(): void {
     this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
-    
-    // Set up ResizeObserver only once, after first render when elements exist
-    if (!this._ro) {
-      this._ro = new ResizeObserver(() => {
-        const box = (this.querySelector('.wrapper') as HTMLElement)?.getBoundingClientRect();
-        if (!box) return;
-
-        const w = Math.round(box.width);
-        const h = Math.round(box.height);
-        if (w === this._lastW && h === this._lastH) return;   // no real change
-
-        this._lastW = w; this._lastH = h;
-
-        // schedule one size update for this frame
-        if (this._raf) cancelAnimationFrame(this._raf);
-        this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
-      });
-    }
-
-    // observe the WRAPPER only (observing `this` can cascade)
-    const wrapper = this.querySelector('.wrapper') as HTMLElement;
-    if (wrapper && this._ro) {
-      this._ro.disconnect(); // Disconnect any previous observations
-      this._ro.observe(wrapper);
-    }
+    // Temporarily disable ResizeObserver to test if it's causing the issue
   }
 
   protected willUpdate() {
