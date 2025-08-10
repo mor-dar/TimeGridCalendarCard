@@ -32,6 +32,11 @@ export class TimeGridCalendarCard extends LitElement {
   private _calendarEl?: HTMLDivElement;
   private _ro?: ResizeObserver;
   private _raf?: number;
+  private _lastW = 0;
+  private _lastH = 0;
+  private _lastLocale?: string;
+  private _lastDir?: 'ltr' | 'rtl';
+  private _lastTz?: string;
 
   // cache: key -> { ts, events }
   private _cache = new Map<string, { ts: number; events: EventInput[] }>();
@@ -310,14 +315,25 @@ export class TimeGridCalendarCard extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
+    // attach RO after the element exists
     this._ro = new ResizeObserver(() => {
-      // Init once we have a measurable box
-      if (!this._calendar && this._calendarEl?.offsetParent) this._initCalendar();
-      // Throttle size updates
+      const box = (this.querySelector('.wrapper') as HTMLElement)?.getBoundingClientRect();
+      if (!box) return;
+
+      const w = Math.round(box.width);
+      const h = Math.round(box.height);
+      if (w === this._lastW && h === this._lastH) return;   // no real change
+
+      this._lastW = w; this._lastH = h;
+
+      // schedule one size update for this frame
       cancelAnimationFrame(this._raf!);
       this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
     });
-    this._ro.observe(this);
+
+    // observe the WRAPPER only (observing `this` can cascade)
+    const wrapper = this.querySelector('.wrapper') as HTMLElement;
+    if (wrapper) this._ro.observe(wrapper);
   }
 
   protected firstUpdated(): void {
@@ -338,10 +354,23 @@ export class TimeGridCalendarCard extends LitElement {
     const h = typeof this._config.height === 'number' ? `${this._config.height}px` : (this._config.height || '520px');
     (this.querySelector('.wrapper') as HTMLElement)?.style.setProperty('--tgcc-height', h);
     
-    // Update only cheap options at runtime
-    this._calendar.setOption('locale', this.hass.locale?.language ?? 'en');
-    this._calendar.setOption('direction', (document?.dir as 'ltr' | 'rtl') || 'ltr');
-    this._calendar.setOption('timeZone', this.hass.config?.time_zone || 'local');
+    // Update only when options actually change
+    const locale = this.hass.locale?.language ?? 'en';
+    const dir = (document?.dir as 'ltr' | 'rtl') || 'ltr';
+    const tz = this.hass.config?.time_zone || 'local';
+
+    if (locale !== this._lastLocale) {
+      this._calendar.setOption('locale', locale);
+      this._lastLocale = locale;
+    }
+    if (dir !== this._lastDir) {
+      this._calendar.setOption('direction', dir);
+      this._lastDir = dir;
+    }
+    if (tz !== this._lastTz) {
+      this._calendar.setOption('timeZone', tz);
+      this._lastTz = tz;
+    }
   }
 
   disconnectedCallback(): void {
@@ -378,6 +407,7 @@ export class TimeGridCalendarCard extends LitElement {
       navLinks: !this._config.todayOnly,
       initialDate: today,
       height: '100%',
+      handleWindowResize: false,      // important: avoid double layout work
       expandRows: true,
       stickyHeaderDates: true,
       firstDay: this.hass?.locale?.first_day_of_week ?? 0,
