@@ -41,7 +41,6 @@ export class TimeGridCalendarCard extends LitElement {
   // cache: key -> { ts, events }
   private _cache = new Map<string, { ts: number; events: EventInput[] }>();
   private _inflight = new Map<string, Promise<EventInput[]>>();
-  private _maxCacheEntries = 50;
 
   static styles = css`
     ha-card {
@@ -345,8 +344,6 @@ export class TimeGridCalendarCard extends LitElement {
       this._ro.disconnect(); // Disconnect any previous observations
       this._ro.observe(wrapper);
     }
-    
-    // Calendar initialization happens in willUpdate when hass is available
   }
 
   protected willUpdate() {
@@ -395,9 +392,6 @@ export class TimeGridCalendarCard extends LitElement {
       this._calendar.destroy();
       this._calendar = undefined;
     }
-    // Clear caches on disconnect
-    this._cache.clear();
-    this._inflight.clear();
   }
 
   private _initCalendar(): void {
@@ -507,17 +501,8 @@ export class TimeGridCalendarCard extends LitElement {
         });
       }
 
-      // Save cache with size limit
+      // Save cache
       this._cache.set(key, { ts: now, events: mapped });
-      
-      // Enforce cache size limit (LRU)
-      if (this._cache.size > this._maxCacheEntries) {
-        const firstKey = this._cache.keys().next().value;
-        if (firstKey) {
-          this._cache.delete(firstKey);
-        }
-      }
-      
       this._inflight.delete(key);
       return mapped;
     })();
