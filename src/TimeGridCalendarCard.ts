@@ -307,7 +307,11 @@ export class TimeGridCalendarCard extends LitElement {
 
         ${this._error ? html`<div class="error">${this._error}</div>` : nothing}
         <div class="wrapper">
-          <div id="fc" class="tgcc"></div>
+          <div id="fc" class="tgcc">
+            <div style="padding: 20px; text-align: center;">
+              Calendar card loaded successfully - initialization disabled for testing
+            </div>
+          </div>
         </div>
       </ha-card>
     `;
@@ -323,9 +327,10 @@ export class TimeGridCalendarCard extends LitElement {
   }
 
   protected willUpdate() {
-    if (!this._calendar && this.hass && this._calendarEl?.offsetParent) {
-      this._initCalendar();
-    }
+    // Temporarily disable calendar initialization to test basic rendering
+    // if (!this._calendar && this.hass && this._calendarEl?.offsetParent) {
+    //   this._initCalendar();
+    // }
   }
   
   protected updated(): void {
