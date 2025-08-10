@@ -1,4 +1,4 @@
-import { LitElement, html, css, nothing, PropertyValues } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { HomeAssistant, TimeGridCalendarCardConfig, HACalendarEventStringy as _Hack } from './types';
 import { VERSION, isAllDay, toIso, regexAnyMatch, hashKey } from './utils';
@@ -363,13 +363,14 @@ export class TimeGridCalendarCard extends LitElement {
     // Calendar initialization moved to firstUpdated to avoid timing issues
   }
   
-  protected updated(changedProperties: PropertyValues): void {
+  protected updated(): void {
     if (!this._calendar || !this.hass) return;
     
-    // Only update height if config changed
-    if (changedProperties.has('_config') && this._wrapperEl) {
+    // Set height once after render - use cached wrapper element if available
+    const wrapper = this._wrapperEl || this.querySelector('.wrapper') as HTMLElement;
+    if (wrapper) {
       const h = typeof this._config.height === 'number' ? `${this._config.height}px` : (this._config.height || '520px');
-      this._wrapperEl.style.setProperty('--tgcc-height', h);
+      wrapper.style.setProperty('--tgcc-height', h);
     }
     
     // Update only when options actually change
