@@ -315,36 +315,44 @@ export class TimeGridCalendarCard extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-    // attach RO after the element exists
-    this._ro = new ResizeObserver(() => {
-      const box = (this.querySelector('.wrapper') as HTMLElement)?.getBoundingClientRect();
-      if (!box) return;
-
-      const w = Math.round(box.width);
-      const h = Math.round(box.height);
-      if (w === this._lastW && h === this._lastH) return;   // no real change
-
-      this._lastW = w; this._lastH = h;
-
-      // schedule one size update for this frame
-      cancelAnimationFrame(this._raf!);
-      this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
-    });
-
-    // observe the WRAPPER only (observing `this` can cascade)
-    const wrapper = this.querySelector('.wrapper') as HTMLElement;
-    if (wrapper) this._ro.observe(wrapper);
   }
 
   protected firstUpdated(): void {
     this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
-    // Defer init to ResizeObserver rather than doing it immediately
+    
+    // Set up ResizeObserver only once, after first render when elements exist
+    if (!this._ro) {
+      this._ro = new ResizeObserver(() => {
+        const box = (this.querySelector('.wrapper') as HTMLElement)?.getBoundingClientRect();
+        if (!box) return;
+
+        const w = Math.round(box.width);
+        const h = Math.round(box.height);
+        if (w === this._lastW && h === this._lastH) return;   // no real change
+
+        this._lastW = w; this._lastH = h;
+
+        // schedule one size update for this frame
+        if (this._raf) cancelAnimationFrame(this._raf);
+        this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
+      });
+    }
+
+    // observe the WRAPPER only (observing `this` can cascade)
+    const wrapper = this.querySelector('.wrapper') as HTMLElement;
+    if (wrapper && this._ro) {
+      this._ro.disconnect(); // Disconnect any previous observations
+      this._ro.observe(wrapper);
+    }
+    
+    // Initialize calendar after first render when we have all elements
+    if (!this._calendar && this.hass && this._calendarEl) {
+      this._initCalendar();
+    }
   }
 
   protected willUpdate() {
-    if (!this._calendar && this.hass && this._calendarEl?.offsetParent) {
-      this._initCalendar();
-    }
+    // Calendar initialization moved to firstUpdated to avoid timing issues
   }
   
   protected updated(): void {
@@ -375,21 +383,22 @@ export class TimeGridCalendarCard extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback?.();
-    this._ro?.disconnect();
-    cancelAnimationFrame(this._raf!);
-    this._calendar?.destroy();
-    this._calendar = undefined;
+    if (this._ro) {
+      this._ro.disconnect();
+      this._ro = undefined;
+    }
+    if (this._raf) {
+      cancelAnimationFrame(this._raf);
+      this._raf = undefined;
+    }
+    if (this._calendar) {
+      this._calendar.destroy();
+      this._calendar = undefined;
+    }
   }
 
   private _initCalendar(): void {
     if (!this._calendarEl) return;
-    
-    // Set the wrapper height from config
-    if (this._calendarEl) {
-      const h = this._config.height;
-      const px = typeof h === 'number' ? `${h}px` : (h || '520px');
-      (this.querySelector('.wrapper') as HTMLElement)?.style.setProperty('--tgcc-height', px);
-    }
     
     const locale = this.hass?.locale?.language ?? 'en';
     const dir = (document?.dir as 'ltr' | 'rtl') || 'ltr';
