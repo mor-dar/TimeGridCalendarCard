@@ -407,22 +407,8 @@ export class TimeGridCalendarCard extends LitElement {
       slotEventOverlap: this._config.slotEventOverlap,
       validRange: this._config.todayOnly ? { start: startOfToday, end: endOfToday } : undefined,
       eventClick: (info) => this._onEventClick(info),
-      eventSources: [
-        {
-          id: 'ha-calendars',
-          events: async (info, success, failure) => {
-            try {
-              const evts = await this._fetchMergedEvents(info.startStr, info.endStr);
-              success(evts);
-            } catch (e: any) {
-              console.error(e);
-              this._error = e?.message ?? String(e);
-              failure(e);
-              this.requestUpdate();
-            }
-          },
-        },
-      ],
+      // Temporarily disable event fetching to test if it causes the hang
+      eventSources: [],
     });
 
     this._calendar.render();
