@@ -8,6 +8,7 @@ interface SimpleEvent {
   end: Date;
   color?: string;
   entityId: string;
+  allDay?: boolean;
 }
 
 @customElement('time-grid-calendar-card')
@@ -62,6 +63,9 @@ export class TimeGridCalendarCard extends LitElement {
       overflow-y: auto;
       position: relative;
       background: var(--card-background-color);
+    }
+    .grid-container.with-all-day {
+      height: calc(100% - var(--header-height) - var(--all-day-height, 50px));
     }
     .time-grid {
       position: relative;
@@ -146,6 +150,37 @@ export class TimeGridCalendarCard extends LitElement {
       padding: 16px;
       color: var(--error-color);
     }
+    .all-day-section {
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--grid-color);
+      background: var(--card-background-color);
+      min-height: var(--all-day-height, 50px);
+    }
+    .all-day-label {
+      font-size: 12px;
+      color: var(--secondary-text-color);
+      margin-bottom: 4px;
+    }
+    .all-day-events {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .all-day-event {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      background: var(--primary-color);
+      color: white;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .all-day-event:hover {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
   `;
 
   public setConfig(config: TimeGridCalendarCardConfig): void {
@@ -205,6 +240,8 @@ export class TimeGridCalendarCard extends LitElement {
 
     const hours = this._getHours();
     const todayEvents = this._filterTodayEvents();
+    const allDayEvents = this._filterAllDayEvents();
+    const timedEvents = todayEvents.filter(e => !e.allDay);
     const nowPosition = this._getNowPosition();
 
     return html`
@@ -226,7 +263,24 @@ export class TimeGridCalendarCard extends LitElement {
           </div>
         `}
         
-        <div class="grid-container">
+        ${allDayEvents.length > 0 ? html`
+          <div class="all-day-section">
+            <div class="all-day-label">All day</div>
+            <div class="all-day-events">
+              ${allDayEvents.map(event => html`
+                <div 
+                  class="all-day-event"
+                  style="background-color: ${event.color || 'var(--primary-color)'}"
+                  @click=${() => this._handleEventClick(event)}
+                >
+                  ${event.title}
+                </div>
+              `)}
+            </div>
+          </div>
+        ` : nothing}
+        
+        <div class="grid-container ${allDayEvents.length > 0 ? 'with-all-day' : ''}">
           <div class="time-grid">
             ${hours.map(hour => html`
               <div class="hour-row">
@@ -235,7 +289,7 @@ export class TimeGridCalendarCard extends LitElement {
             `)}
             
             <div class="event-container">
-              ${todayEvents.map(event => this._renderEvent(event))}
+              ${timedEvents.map(event => this._renderEvent(event))}
             </div>
             
             ${this._config.nowIndicator && nowPosition !== null ? html`
@@ -345,6 +399,10 @@ export class TimeGridCalendarCard extends LitElement {
     });
   }
 
+  private _filterAllDayEvents(): SimpleEvent[] {
+    return this._filterTodayEvents().filter(event => event.allDay === true);
+  }
+
   private async _loadEvents() {
     if (!this.hass) return;
 
@@ -367,8 +425,9 @@ export class TimeGridCalendarCard extends LitElement {
           const startDate = new Date(evt.start.dateTime || evt.start.date || evt.start);
           const endDate = new Date(evt.end.dateTime || evt.end.date || evt.end);
           
-          // Skip all-day events for now
-          if (evt.start.date && !evt.start.dateTime) continue;
+          // Check if this is an all-day event
+          const isAllDay = (evt.start.date && !evt.start.dateTime) || 
+                           (evt.end.date && !evt.end.dateTime);
           
           events.push({
             title: evt.summary || 'Untitled',
@@ -376,6 +435,7 @@ export class TimeGridCalendarCard extends LitElement {
             end: endDate,
             color: this._config.colors?.[entityId],
             entityId: entityId,
+            allDay: isAllDay,
           });
         }
       }
