@@ -7,7 +7,7 @@ import { VERSION, isAllDay, toIso, regexAnyMatch, hashKey } from './utils';
 import { Calendar, type EventInput } from '@fullcalendar/core';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import allLocales from '@fullcalendar/core/locales-all';
+// REMOVED: import allLocales - this was causing 100+ locales to be bundled
 
 // Register in card picker
 // @ts-ignore
@@ -42,221 +42,18 @@ export class TimeGridCalendarCard extends LitElement {
   private _cache = new Map<string, { ts: number; events: EventInput[] }>();
   private _inflight = new Map<string, Promise<EventInput[]>>();
 
+  // Minimal CSS - FullCalendar includes its own styles
   static styles = css`
     ha-card {
       overflow: hidden;
     }
     .wrapper {
       position: relative;
-      block-size: var(--tgcc-height, 520px); /* card height for internal scroll */
+      block-size: var(--tgcc-height, 520px);
     }
-    /* FullCalendar theming via CSS vars, applied on our container */
-    .tgcc {
-      /* backgrounds */
-      --fc-page-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
-      --fc-neutral-bg-color: var(--card-background-color, var(--ha-card-background, var(--primary-background-color)));
-      --fc-today-bg-color: transparent; /* remove green/brown tint */
-      /* borders + now indicator */
-      --fc-border-color: var(--divider-color, rgba(128,128,128,.3));
-      --fc-now-indicator-color: var(--accent-color, var(--primary-color));
-    }
-    /* Ensure inner scroller can scroll independently */
-    .tgcc .fc-scroller {
-      overflow-y: auto !important;
-    }
-    .fc .fc-timegrid-slot { /* compact density tweak */ }
     .error {
       color: var(--error-color);
       padding: 8px 16px;
-    }
-    
-    /* Essential FullCalendar styles */
-    .fc {
-      direction: ltr;
-      text-align: left;
-    }
-    .fc table {
-      border-collapse: collapse;
-      border-spacing: 0;
-      font-size: 1em;
-    }
-    .fc th {
-      text-align: center;
-    }
-    .fc th,
-    .fc td {
-      vertical-align: top;
-      padding: 0;
-    }
-    .fc a[data-navlink] {
-      cursor: pointer;
-    }
-    .fc a[data-navlink]:hover {
-      text-decoration: underline;
-    }
-    .fc-direction-ltr {
-      direction: ltr;
-      text-align: left;
-    }
-    .fc-direction-rtl {
-      direction: rtl;
-      text-align: right;
-    }
-    .fc-theme-standard td,
-    .fc-theme-standard th {
-      border: 1px solid var(--fc-border-color, #ddd);
-    }
-    .fc-theme-standard .fc-scrollgrid {
-      border: 1px solid var(--fc-border-color, #ddd);
-    }
-    .fc-theme-standard .fc-scrollgrid-liquid {
-      border-width: 1px 0;
-    }
-    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section > .fc-scrollgrid-section-header > .fc-scrollgrid-section-body,
-    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section > .fc-scrollgrid-section-footer > .fc-scrollgrid-section-body {
-      border-left: 1px solid var(--fc-border-color, #ddd);
-      border-right: 1px solid var(--fc-border-color, #ddd);
-    }
-    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:first-child > .fc-scrollgrid-section-header > .fc-scrollgrid-section-body,
-    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:first-child > .fc-scrollgrid-section-footer > .fc-scrollgrid-section-body {
-      border-top: 1px solid var(--fc-border-color, #ddd);
-    }
-    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:last-child > .fc-scrollgrid-section-header > .fc-scrollgrid-section-body,
-    .fc-theme-standard .fc-scrollgrid-liquid > .fc-scrollgrid-section:last-child > .fc-scrollgrid-section-footer > .fc-scrollgrid-section-body {
-      border-bottom: 1px solid var(--fc-border-color, #ddd);
-    }
-    .fc-event {
-      position: relative;
-      display: block;
-      font-size: 0.85em;
-      line-height: 1.4;
-      border-radius: 3px;
-      border: 1px solid #3788d8;
-      background-color: #3788d8;
-      color: #fff;
-      cursor: pointer;
-    }
-    .fc-event-harness,
-    .fc-event-harness-abs {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-    }
-    .fc-event-harness > .fc-event,
-    .fc-event-harness-abs > .fc-event {
-      position: relative;
-      z-index: 1;
-    }
-    .fc-event-main {
-      z-index: 2;
-      position: relative;
-    }
-    .fc-event-main-frame {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-    }
-    .fc-event-time {
-      overflow: hidden;
-      font-weight: bold;
-    }
-    .fc-event-title-container {
-      flex-grow: 1;
-      flex-shrink: 1;
-      min-width: 0;
-    }
-    .fc-event-title {
-      display: inline-block;
-      vertical-align: top;
-      left: 0;
-      right: 0;
-      max-width: 100%;
-      overflow: hidden;
-    }
-    .fc-timegrid {
-      flex-direction: column;
-      min-height: 100%;
-    }
-    .fc-timegrid-header .fc-scrollgrid-section {
-      height: auto;
-    }
-    .fc-timegrid-header .fc-scrollgrid-section table {
-      height: 100%;
-    }
-    .fc-timegrid-body {
-      position: relative;
-      z-index: 1;
-      flex-grow: 1;
-    }
-    .fc-timegrid-divider {
-      padding: 0 0 2px;
-    }
-    .fc-timegrid-slots {
-      position: relative;
-    }
-    .fc-timegrid-slot {
-      height: 1.5em;
-      border-bottom: 0;
-    }
-    .fc-timegrid-slot:empty:before {
-      content: '\\00a0';
-    }
-    .fc-timegrid-slot-minor {
-      border-top-style: dotted;
-    }
-    .fc-timegrid-slot-label-cushion {
-      display: inline-block;
-      white-space: nowrap;
-    }
-    .fc-timegrid-slot-label {
-      vertical-align: middle;
-    }
-    .fc-timegrid-axis-cushion,
-    .fc-timegrid-slot-label-cushion {
-      padding: 0 4px;
-    }
-    .fc-timegrid-axis-frame-liquid {
-      height: 100%;
-    }
-    .fc-timegrid-axis-frame {
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-    }
-    .fc-timegrid-axis-cushion {
-      max-width: 60px;
-      flex-shrink: 0;
-    }
-    .fc-timegrid-now-indicator-line {
-      position: absolute;
-      z-index: 4;
-      left: 0;
-      right: 0;
-      border-style: solid;
-      border-color: red;
-      border-width: 1px 0 0;
-    }
-    .fc-timegrid-now-indicator-arrow {
-      position: absolute;
-      z-index: 4;
-      margin-top: -5px;
-      border-style: solid;
-      border-color: red;
-    }
-    .fc-direction-ltr .fc-timegrid-now-indicator-arrow {
-      left: 0;
-      border-width: 5px 0 5px 6px;
-      border-top-color: transparent;
-      border-bottom-color: transparent;
-    }
-    .fc-direction-rtl .fc-timegrid-now-indicator-arrow {
-      right: 0;
-      border-width: 5px 6px 5px 0;
-      border-top-color: transparent;
-      border-bottom-color: transparent;
     }
   `;
 
@@ -307,11 +104,7 @@ export class TimeGridCalendarCard extends LitElement {
 
         ${this._error ? html`<div class="error">${this._error}</div>` : nothing}
         <div class="wrapper">
-          <div id="fc" class="tgcc">
-            <div style="padding: 20px; text-align: center;">
-              Calendar card loaded successfully - initialization disabled for testing
-            </div>
-          </div>
+          <div id="fc" class="tgcc"></div>
         </div>
       </ha-card>
     `;
@@ -323,14 +116,37 @@ export class TimeGridCalendarCard extends LitElement {
 
   protected firstUpdated(): void {
     this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
-    // Temporarily disable ResizeObserver to test if it's causing the issue
+    
+    // Set up ResizeObserver only once, after first render when elements exist
+    if (!this._ro) {
+      this._ro = new ResizeObserver(() => {
+        const box = (this.querySelector('.wrapper') as HTMLElement)?.getBoundingClientRect();
+        if (!box) return;
+
+        const w = Math.round(box.width);
+        const h = Math.round(box.height);
+        if (w === this._lastW && h === this._lastH) return;   // no real change
+
+        this._lastW = w; this._lastH = h;
+
+        // schedule one size update for this frame
+        if (this._raf) cancelAnimationFrame(this._raf);
+        this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
+      });
+    }
+
+    // observe the WRAPPER only (observing `this` can cascade)
+    const wrapper = this.querySelector('.wrapper') as HTMLElement;
+    if (wrapper && this._ro) {
+      this._ro.disconnect(); // Disconnect any previous observations
+      this._ro.observe(wrapper);
+    }
   }
 
   protected willUpdate() {
-    // Temporarily disable calendar initialization to test basic rendering
-    // if (!this._calendar && this.hass && this._calendarEl?.offsetParent) {
-    //   this._initCalendar();
-    // }
+    if (!this._calendar && this.hass && this._calendarEl?.offsetParent) {
+      this._initCalendar();
+    }
   }
   
   protected updated(): void {
@@ -400,8 +216,9 @@ export class TimeGridCalendarCard extends LitElement {
       firstDay: this.hass?.locale?.first_day_of_week ?? 0,
       dayHeaderFormat: { weekday: 'long', month: 'short', day: 'numeric' },
       slotLabelFormat: this._slotLabelFormat(),
-      locales: allLocales,
-      locale,
+      // Removed locales: allLocales to reduce bundle size
+      // FullCalendar will use browser's default locale (usually English)
+      locale: 'en', // Force English for now to avoid locale loading issues
       direction: dir,
       timeZone: tz,
       nowIndicator: this._config.nowIndicator,
@@ -412,8 +229,22 @@ export class TimeGridCalendarCard extends LitElement {
       slotEventOverlap: this._config.slotEventOverlap,
       validRange: this._config.todayOnly ? { start: startOfToday, end: endOfToday } : undefined,
       eventClick: (info) => this._onEventClick(info),
-      // Temporarily disable event fetching to test if it causes the hang
-      eventSources: [],
+      eventSources: [
+        {
+          id: 'ha-calendars',
+          events: async (info, success, failure) => {
+            try {
+              const evts = await this._fetchMergedEvents(info.startStr, info.endStr);
+              success(evts);
+            } catch (e: any) {
+              console.error(e);
+              this._error = e?.message ?? String(e);
+              failure(e);
+              this.requestUpdate();
+            }
+          },
+        },
+      ],
     });
 
     this._calendar.render();
