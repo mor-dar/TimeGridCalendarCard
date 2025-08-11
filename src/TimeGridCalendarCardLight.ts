@@ -11,6 +11,11 @@ interface SimpleEvent {
   allDay?: boolean;
 }
 
+interface PositionedEvent extends SimpleEvent {
+  column: number;
+  totalColumns: number;
+}
+
 @customElement('time-grid-calendar-card')
 export class TimeGridCalendarCard extends LitElement {
   @property({ attribute: false }) public hass?: HomeAssistant;
@@ -97,8 +102,6 @@ export class TimeGridCalendarCard extends LitElement {
     }
     .event {
       position: absolute;
-      left: 0;
-      right: 8px;
       background: var(--primary-color);
       color: white;
       padding: 4px;
@@ -107,6 +110,8 @@ export class TimeGridCalendarCard extends LitElement {
       overflow: hidden;
       cursor: pointer;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      margin-right: 2px;
+      border-left: 3px solid rgba(0,0,0,0.2);
     }
     .event:hover {
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
@@ -289,7 +294,7 @@ export class TimeGridCalendarCard extends LitElement {
             `)}
             
             <div class="event-container">
-              ${timedEvents.map(event => this._renderEvent(event))}
+              ${this._layoutEvents(timedEvents).map(event => this._renderEvent(event))}
             </div>
             
             ${this._config.nowIndicator && nowPosition !== null ? html`
@@ -301,9 +306,12 @@ export class TimeGridCalendarCard extends LitElement {
     `;
   }
 
-  private _renderEvent(event: SimpleEvent) {
+  private _renderEvent(event: PositionedEvent) {
     const position = this._calculateEventPosition(event);
     if (!position) return nothing;
+
+    const width = `calc((100% - 8px) / ${event.totalColumns})`;
+    const left = `calc(${width} * ${event.column})`;
 
     return html`
       <div
@@ -311,6 +319,8 @@ export class TimeGridCalendarCard extends LitElement {
         style="
           top: ${position.top}px;
           height: ${position.height}px;
+          left: ${left};
+          width: ${width};
           background-color: ${event.color || 'var(--primary-color)'};
         "
         @click=${() => this._handleEventClick(event)}
@@ -401,6 +411,90 @@ export class TimeGridCalendarCard extends LitElement {
 
   private _filterAllDayEvents(): SimpleEvent[] {
     return this._filterTodayEvents().filter(event => event.allDay === true);
+  }
+
+  private _layoutEvents(events: SimpleEvent[]): PositionedEvent[] {
+    if (events.length === 0) return [];
+    
+    // Sort events by start time, then by duration (longer events first)
+    const sorted = [...events].sort((a, b) => {
+      const startDiff = a.start.getTime() - b.start.getTime();
+      if (startDiff !== 0) return startDiff;
+      // For same start time, put longer events first
+      const durationA = a.end.getTime() - a.start.getTime();
+      const durationB = b.end.getTime() - b.start.getTime();
+      return durationB - durationA;
+    });
+
+    // Group overlapping events
+    const groups: SimpleEvent[][] = [];
+    let currentGroup: SimpleEvent[] = [];
+    let groupEnd = new Date(0);
+
+    for (const event of sorted) {
+      if (event.start >= groupEnd) {
+        // Start a new group
+        if (currentGroup.length > 0) {
+          groups.push(currentGroup);
+        }
+        currentGroup = [event];
+        groupEnd = event.end;
+      } else {
+        // Add to current group and extend group end if needed
+        currentGroup.push(event);
+        if (event.end > groupEnd) {
+          groupEnd = event.end;
+        }
+      }
+    }
+    
+    if (currentGroup.length > 0) {
+      groups.push(currentGroup);
+    }
+
+    // Position events within each group
+    const positioned: PositionedEvent[] = [];
+    
+    for (const group of groups) {
+      const columns: SimpleEvent[][] = [];
+      
+      for (const event of group) {
+        // Find the first column where this event fits
+        let placed = false;
+        for (let col = 0; col < columns.length; col++) {
+          const column = columns[col];
+          // Check if event overlaps with any event in this column
+          const overlaps = column.some(e => 
+            event.start < e.end && event.end > e.start
+          );
+          
+          if (!overlaps) {
+            column.push(event);
+            placed = true;
+            break;
+          }
+        }
+        
+        // If didn't fit in any column, create a new one
+        if (!placed) {
+          columns.push([event]);
+        }
+      }
+      
+      // Assign column positions to events
+      const totalColumns = columns.length;
+      for (let col = 0; col < columns.length; col++) {
+        for (const event of columns[col]) {
+          positioned.push({
+            ...event,
+            column: col,
+            totalColumns: totalColumns
+          });
+        }
+      }
+    }
+    
+    return positioned;
   }
 
   private async _loadEvents() {
