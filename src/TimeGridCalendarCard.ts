@@ -115,35 +115,52 @@ export class TimeGridCalendarCard extends LitElement {
   }
 
   protected firstUpdated(): void {
-    this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
+    // Setup happens after first render when DOM is ready
+    this._setupResizeObserver();
+  }
+  
+  private _setupResizeObserver(): void {
+    // Clean up any existing observer first
+    if (this._ro) {
+      this._ro.disconnect();
+      this._ro = undefined;
+    }
     
-    // Set up ResizeObserver only once, after first render when elements exist
-    if (!this._ro) {
-      this._ro = new ResizeObserver(() => {
-        const box = (this.querySelector('.wrapper') as HTMLElement)?.getBoundingClientRect();
-        if (!box) return;
-
-        const w = Math.round(box.width);
-        const h = Math.round(box.height);
-        if (w === this._lastW && h === this._lastH) return;   // no real change
-
-        this._lastW = w; this._lastH = h;
-
-        // schedule one size update for this frame
-        if (this._raf) cancelAnimationFrame(this._raf);
-        this._raf = requestAnimationFrame(() => this._calendar?.updateSize());
-      });
-    }
-
-    // observe the WRAPPER only (observing `this` can cascade)
+    this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
     const wrapper = this.querySelector('.wrapper') as HTMLElement;
-    if (wrapper && this._ro) {
-      this._ro.disconnect(); // Disconnect any previous observations
-      this._ro.observe(wrapper);
-    }
+    
+    if (!wrapper || !this._calendarEl) return;
+    
+    // Create new ResizeObserver
+    this._ro = new ResizeObserver(() => {
+      const box = wrapper.getBoundingClientRect();
+      if (!box) return;
+
+      const w = Math.round(box.width);
+      const h = Math.round(box.height);
+      if (w === this._lastW && h === this._lastH) return;   // no real change
+
+      this._lastW = w; this._lastH = h;
+
+      // schedule one size update for this frame
+      if (this._raf) cancelAnimationFrame(this._raf);
+      this._raf = requestAnimationFrame(() => {
+        if (this._calendar && this.isConnected) {
+          this._calendar.updateSize();
+        }
+      });
+    });
+    
+    this._ro.observe(wrapper);
   }
 
   protected willUpdate() {
+    // Re-acquire calendar element reference if needed
+    if (!this._calendarEl && this.renderRoot) {
+      this._calendarEl = this.querySelector('#fc') as HTMLDivElement;
+    }
+    
+    // Initialize calendar if not already done
     if (!this._calendar && this.hass && this._calendarEl?.offsetParent) {
       this._initCalendar();
     }
@@ -177,22 +194,58 @@ export class TimeGridCalendarCard extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback?.();
+    
+    // Clean up ResizeObserver
     if (this._ro) {
       this._ro.disconnect();
       this._ro = undefined;
     }
+    
+    // Cancel any pending animation frames
     if (this._raf) {
       cancelAnimationFrame(this._raf);
       this._raf = undefined;
     }
+    
+    // Destroy calendar and clear ALL references
     if (this._calendar) {
-      this._calendar.destroy();
+      try {
+        this._calendar.destroy();
+      } catch (e) {
+        console.error('Error destroying calendar:', e);
+      }
       this._calendar = undefined;
     }
+    
+    // Clear element references
+    this._calendarEl = undefined;
+    
+    // Clear cache to prevent memory leaks
+    this._cache.clear();
+    this._inflight.clear();
+    
+    // Reset state
+    this._lastW = 0;
+    this._lastH = 0;
+    this._lastLocale = undefined;
+    this._lastDir = undefined;
+    this._lastTz = undefined;
   }
 
   private _initCalendar(): void {
     if (!this._calendarEl) return;
+    
+    // Prevent multiple initializations
+    if (this._calendar) {
+      console.warn('Calendar already initialized, skipping...');
+      return;
+    }
+    
+    // Ensure element is actually in the DOM
+    if (!this._calendarEl.offsetParent) {
+      console.warn('Calendar element not visible, skipping initialization');
+      return;
+    }
     
     const locale = this.hass?.locale?.language ?? 'en';
     const dir = (document?.dir as 'ltr' | 'rtl') || 'ltr';
