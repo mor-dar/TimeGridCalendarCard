@@ -216,6 +216,24 @@ export class TimeGridCalendarCard extends LitElement {
     }, 60000);
   }
 
+  protected firstUpdated(changedProperties: Map<string, any>): void {
+    super.firstUpdated(changedProperties);
+    // Delay scroll to ensure DOM is fully ready
+    setTimeout(() => {
+      this._scrollToCurrentTime();
+    }, 250);
+  }
+
+  protected updated(changedProperties: Map<string, any>): void {
+    super.updated(changedProperties);
+    // Scroll to current time when date changes to today or after events load
+    if ((changedProperties.has('_currentDate') && this._isToday(this._currentDate)) || 
+        changedProperties.has('_events')) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => this._scrollToCurrentTime(), 100);
+    }
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
     if (this._nowInterval) {
@@ -288,7 +306,7 @@ export class TimeGridCalendarCard extends LitElement {
         <div class="grid-container ${allDayEvents.length > 0 ? 'with-all-day' : ''}">
           <div class="time-grid">
             ${hours.map(hour => html`
-              <div class="hour-row">
+              <div class="hour-row" data-hour="${hour}">
                 <div class="hour-label">${this._formatHour(hour)}</div>
               </div>
             `)}
@@ -334,8 +352,8 @@ export class TimeGridCalendarCard extends LitElement {
   }
 
   private _calculateEventPosition(event: SimpleEvent) {
-    const minHour = parseInt(this._config.minTime.split(':')[0]);
-    const maxHour = parseInt(this._config.maxTime.split(':')[0]);
+    const minHour = parseInt(this._config?.minTime?.split(':')[0] || '6');
+    const maxHour = parseInt(this._config?.maxTime?.split(':')[0] || '22');
     const hourHeight = 60;
 
     const startHour = event.start.getHours() + event.start.getMinutes() / 60;
@@ -354,8 +372,8 @@ export class TimeGridCalendarCard extends LitElement {
 
   private _getNowPosition(): number | null {
     const now = new Date();
-    const minHour = parseInt(this._config.minTime.split(':')[0]);
-    const maxHour = parseInt(this._config.maxTime.split(':')[0]);
+    const minHour = parseInt(this._config?.minTime?.split(':')[0] || '6');
+    const maxHour = parseInt(this._config?.maxTime?.split(':')[0] || '22');
     const currentHour = now.getHours() + now.getMinutes() / 60;
 
     if (currentHour < minHour || currentHour > maxHour) return null;
@@ -365,8 +383,8 @@ export class TimeGridCalendarCard extends LitElement {
   }
 
   private _getHours(): number[] {
-    const minHour = parseInt(this._config.minTime.split(':')[0]);
-    const maxHour = parseInt(this._config.maxTime.split(':')[0]);
+    const minHour = parseInt(this._config?.minTime?.split(':')[0] || '6');
+    const maxHour = parseInt(this._config?.maxTime?.split(':')[0] || '22');
     const hours = [];
     for (let h = minHour; h <= maxHour; h++) {
       hours.push(h);
@@ -566,6 +584,39 @@ export class TimeGridCalendarCard extends LitElement {
   private _today() {
     this._currentDate = new Date();
     this._loadEvents();
+  }
+
+  private _scrollToCurrentTime() {
+    // Only scroll if showing today
+    if (!this._isToday(this._currentDate)) return;
+    
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      const container = this.renderRoot?.querySelector('.grid-container') as HTMLElement;
+      if (!container) return;
+      
+      const now = new Date();
+      const currentHour = now.getHours() + now.getMinutes() / 60;
+      const minHour = parseInt(this._config?.minTime?.split(':')[0] || '6');
+      const maxHour = parseInt(this._config?.maxTime?.split(':')[0] || '22');
+      
+      // Don't scroll if current time is outside visible range
+      if (currentHour < minHour || currentHour > maxHour) return;
+      
+      // Calculate scroll position to center current time
+      const hourHeight = 60;
+      const scrollPosition = (currentHour - minHour) * hourHeight;
+      
+      // Center the current time in the viewport
+      const containerHeight = container.clientHeight;
+      const centeredPosition = scrollPosition - (containerHeight / 2) + (hourHeight / 2);
+      
+      // Smooth scroll to position
+      container.scrollTo({
+        top: Math.max(0, centeredPosition),
+        behavior: 'smooth'
+      });
+    });
   }
 
   public getCardSize(): number { 
