@@ -1,0 +1,646 @@
+kiosk_mode:
+  kiosk: true
+button_card_templates:
+  fc_day_chip:
+    variables:
+      day_offset: 0
+      helper: input_text.fc_day0
+      select_entity: input_select.family_calendar_selected_day
+      select_value: '0'
+    triggers_update:
+      - '[[[ return variables.select_entity ]]]'
+      - '[[[ return variables.helper ]]]'
+    show_name: false
+    show_icon: false
+    show_label: false
+    layout: vertical
+    styles:
+      grid:
+        - grid-template-areas: '"title" "dots"'
+        - grid-template-rows: auto auto
+        - grid-template-columns: 1fr
+      card:
+        - padding: 8px 10px
+        - border-radius: 16px
+        - box-shadow: none
+        - min-width: 82px
+        - border: |
+            [[[
+              const sel = states[variables.select_entity]?.state === variables.select_value;
+              return sel ? '2px solid var(--primary-color)'
+                         : '1px solid var(--ha-card-border-color, var(--divider-color))';
+            ]]]
+      custom_fields:
+        title:
+          - justify-self: center
+          - font-weight: 700
+          - font-size: clamp(12px, 1.7vw, 16px)
+          - white-space: nowrap
+        dots:
+          - justify-self: center
+          - margin-top: 6px
+    custom_fields:
+      title: |
+        [[[
+          const d = new Date();
+          d.setDate(d.getDate() + (Number(variables.day_offset)||0));
+          const day = d.toLocaleDateString(undefined,{ day:'numeric' });
+          const wk  = d.toLocaleDateString(undefined,{ weekday:'short' });
+          return `${day} ${wk}`;
+        ]]]
+      dots: |
+        [[[
+          const raw = states[variables.helper]?.state || '';
+          const present = new Set(raw.split(',').map(s => s.trim()).filter(Boolean));
+          const people = [
+            {key:'em',           color:'#e57373'},
+            {key:'noam_school',  color:'#64b5f6'},
+            {key:'amit',         color:'#81c784'},
+            {key:'lior',         color:'#ffd54f'},
+            {key:'noam',         color:'#ba68c8'},
+          ];
+          const colored = people
+            .filter(p => present.has(p.key))
+            .map(p => `<span style="width:8px;height:8px;border-radius:50%;display:inline-block;background:${p.color}"></span>`);
+          const content = colored.length
+            ? colored.join('')
+            : `<span style="width:6px;height:6px;border-radius:50%;display:inline-block;background:var(--disabled-text-color);opacity:.2"></span>`;
+          return `<div style="display:flex;gap:8px;align-items:center;justify-content:center;min-height:12px;">${content}</div>`;
+        ]]]
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      data:
+        entity_id: '[[[ return variables.select_entity ]]]'
+        option: |
+          [[[
+            const sel = states[variables.select_entity]?.state;
+            return sel === variables.select_value ? 'none' : variables.select_value;
+          ]]]
+views:
+  - icon: mdi:home
+    path: home
+    type: sidebar
+    badges: []
+    cards:
+      - type: horizontal-stack
+        view_layout:
+          position: main
+        cards:
+          - type: custom:config-template-card
+            variables:
+              - states['input_text.efrat_image'].state
+            entities:
+              - ${vars[0]}
+            card:
+              type: picture
+              image: ${vars[0]}
+              tap_action:
+                action: navigate
+                navigation_path: /lovelace-tablet/efrat
+              hold_action:
+                action: none
+          - type: custom:config-template-card
+            variables:
+              - states['input_text.mor_image'].state
+            entities:
+              - ${vars[0]}
+            card:
+              type: picture
+              image: ${vars[0]}
+              tap_action:
+                action: navigate
+                navigation_path: /lovelace-tablet/mor
+              hold_action:
+                action: none
+          - type: custom:config-template-card
+            variables:
+              - states['input_text.lior_image'].state
+            entities:
+              - ${vars[0]}
+            card:
+              type: picture
+              image: ${vars[0]}
+              tap_action:
+                action: navigate
+                navigation_path: /lovelace-tablet/lior
+              hold_action:
+                action: none
+          - type: custom:config-template-card
+            variables:
+              - states['input_text.noam_image'].state
+            entities:
+              - ${vars[0]}
+            card:
+              type: picture
+              image: ${vars[0]}
+              tap_action:
+                action: navigate
+                navigation_path: /lovelace-tablet/noam
+              hold_action:
+                action: none
+          - show_name: true
+            show_icon: true
+            type: button
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace-tablet/home
+            icon: mdi:home
+            name: Home
+            icon_height: 50px
+          - show_name: true
+            show_icon: true
+            type: button
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace-tablet/living-room
+            icon: mdi:sofa
+            name: Living Room
+            icon_height: 50px
+          - type: button
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace-tablet/kitchen
+            name: Kitchen
+            icon: mdi:silverware-fork-knife
+            icon_height: 50px
+          - type: button
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace-tablet/bathrooms
+            icon: mdi:shower
+            name: Bathrooms
+            icon_height: 50px
+          - type: button
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace-tablet/office
+            name: Office
+            icon: mdi:laptop
+            icon_height: 50px
+          - show_name: true
+            show_icon: true
+            type: button
+            tap_action:
+              action: navigate
+              navigation_path: /lovelace-tablet/mirpeset
+            name: Balcony
+            icon: mdi:theme-light-dark
+            icon_height: 50px
+      - type: vertical-stack
+        cards:
+          - type: horizontal-stack
+            cards:
+              - type: vertical-stack
+                cards:
+                  - type: horizontal-stack
+                    cards:
+                      - type: custom:button-card
+                        template: fc_day_chip
+                        variables:
+                          day_offset: 0
+                          helper: input_text.fc_day0
+                          select_entity: input_select.family_calendar_selected_day
+                          select_value: '0'
+                      - type: custom:button-card
+                        template: fc_day_chip
+                        variables:
+                          day_offset: 1
+                          helper: input_text.fc_day1
+                          select_entity: input_select.family_calendar_selected_day
+                          select_value: '1'
+                      - type: custom:button-card
+                        template: fc_day_chip
+                        variables:
+                          day_offset: 2
+                          helper: input_text.fc_day2
+                          select_entity: input_select.family_calendar_selected_day
+                          select_value: '2'
+                      - type: custom:button-card
+                        template: fc_day_chip
+                        variables:
+                          day_offset: 3
+                          helper: input_text.fc_day3
+                          select_entity: input_select.family_calendar_selected_day
+                          select_value: '3'
+                      - type: custom:button-card
+                        template: fc_day_chip
+                        variables:
+                          day_offset: 4
+                          helper: input_text.fc_day4
+                          select_entity: input_select.family_calendar_selected_day
+                          select_value: '4'
+                      - type: custom:button-card
+                        template: fc_day_chip
+                        variables:
+                          day_offset: 5
+                          helper: input_text.fc_day5
+                          select_entity: input_select.family_calendar_selected_day
+                          select_value: '5'
+                      - type: custom:button-card
+                        template: fc_day_chip
+                        variables:
+                          day_offset: 6
+                          helper: input_text.fc_day6
+                          select_entity: input_select.family_calendar_selected_day
+                          select_value: '6'
+                  - type: conditional
+                    conditions:
+                      - entity: input_select.family_calendar_selected_day
+                        state: '0'
+                    card:
+                      type: custom:atomic-calendar-revive
+                      name: Daily Calendar
+                      enableModeChange: false
+                      firstDayOfWeek: 1
+                      maxDaysToShow: 1
+                      startDaysAhead: 0
+                      showWeekDay: true
+                      showEventIcon: true
+                      refreshInterval: 180
+                      entities:
+                        - entity: calendar.efrat_and_mor
+                          name: Efrat and Mor
+                          color: '#e57373'
+                        - entity: calendar.noam_s_schedule
+                          name: Noam School
+                          color: '#64b5f6'
+                        - entity: calendar.amit
+                          name: Amit
+                          color: '#81c784'
+                        - entity: calendar.lior
+                          name: Lior
+                          color: '#ffd54f'
+                        - entity: calendar.noam
+                          name: Noam
+                          color: '#ba68c8'
+                      showDatePerEvent: false
+                      showEventDate: true
+                      eventDateFormat: HH:mm
+                      showFullDayProgress: false
+                      showNoEventsForToday: false
+                      showAllDayHours: false
+                      showHiddenText: true
+                      showProgressBar: false
+                      noEventText: Nothing today
+                  - type: conditional
+                    conditions:
+                      - entity: input_select.family_calendar_selected_day
+                        state: '1'
+                    card:
+                      type: custom:atomic-calendar-revive
+                      name: Daily Calendar
+                      enableModeChange: false
+                      firstDayOfWeek: 1
+                      maxDaysToShow: 1
+                      startDaysAhead: 1
+                      showWeekDay: true
+                      showEventIcon: true
+                      refreshInterval: 180
+                      entities:
+                        - entity: calendar.efrat_and_mor
+                          name: Efrat and Mor
+                          color: '#e57373'
+                        - entity: calendar.noam_s_schedule
+                          name: Noam School
+                          color: '#64b5f6'
+                        - entity: calendar.amit
+                          name: Amit
+                          color: '#81c784'
+                        - entity: calendar.lior
+                          name: Lior
+                          color: '#ffd54f'
+                        - entity: calendar.noam
+                          name: Noam
+                          color: '#ba68c8'
+                      showDatePerEvent: false
+                      showEventDate: true
+                      eventDateFormat: HH:mm
+                      showFullDayProgress: false
+                      showNoEventsForToday: false
+                      showAllDayHours: false
+                      showHiddenText: true
+                      showProgressBar: false
+                      noEventText: Nothing today
+                  - type: conditional
+                    conditions:
+                      - entity: input_select.family_calendar_selected_day
+                        state: '2'
+                    card:
+                      type: custom:atomic-calendar-revive
+                      name: Daily Calendar
+                      enableModeChange: false
+                      firstDayOfWeek: 1
+                      maxDaysToShow: 1
+                      startDaysAhead: 2
+                      showWeekDay: true
+                      showEventIcon: true
+                      refreshInterval: 180
+                      entities:
+                        - entity: calendar.efrat_and_mor
+                          name: Efrat and Mor
+                          color: '#e57373'
+                        - entity: calendar.noam_s_schedule
+                          name: Noam School
+                          color: '#64b5f6'
+                        - entity: calendar.amit
+                          name: Amit
+                          color: '#81c784'
+                        - entity: calendar.lior
+                          name: Lior
+                          color: '#ffd54f'
+                        - entity: calendar.noam
+                          name: Noam
+                          color: '#ba68c8'
+                      showDatePerEvent: false
+                      showEventDate: true
+                      eventDateFormat: HH:mm
+                      showFullDayProgress: false
+                      showNoEventsForToday: false
+                      showAllDayHours: false
+                      showHiddenText: true
+                      showProgressBar: false
+                      noEventText: Nothing today
+                  - type: conditional
+                    conditions:
+                      - entity: input_select.family_calendar_selected_day
+                        state: '3'
+                    card:
+                      type: custom:atomic-calendar-revive
+                      name: Daily Calendar
+                      enableModeChange: false
+                      firstDayOfWeek: 1
+                      maxDaysToShow: 1
+                      startDaysAhead: 3
+                      showWeekDay: true
+                      showEventIcon: true
+                      refreshInterval: 180
+                      entities:
+                        - entity: calendar.efrat_and_mor
+                          name: Efrat and Mor
+                          color: '#e57373'
+                        - entity: calendar.noam_s_schedule
+                          name: Noam School
+                          color: '#64b5f6'
+                        - entity: calendar.amit
+                          name: Amit
+                          color: '#81c784'
+                        - entity: calendar.lior
+                          name: Lior
+                          color: '#ffd54f'
+                        - entity: calendar.noam
+                          name: Noam
+                          color: '#ba68c8'
+                      showDatePerEvent: false
+                      showEventDate: true
+                      eventDateFormat: HH:mm
+                      showFullDayProgress: false
+                      showNoEventsForToday: false
+                      showAllDayHours: false
+                      showHiddenText: true
+                      showProgressBar: false
+                      noEventText: Nothing today
+                  - type: conditional
+                    conditions:
+                      - entity: input_select.family_calendar_selected_day
+                        state: '4'
+                    card:
+                      type: custom:atomic-calendar-revive
+                      name: Daily Calendar
+                      enableModeChange: false
+                      firstDayOfWeek: 1
+                      maxDaysToShow: 1
+                      startDaysAhead: 4
+                      showWeekDay: true
+                      showEventIcon: true
+                      refreshInterval: 180
+                      entities:
+                        - entity: calendar.efrat_and_mor
+                          name: Efrat and Mor
+                          color: '#e57373'
+                        - entity: calendar.noam_s_schedule
+                          name: Noam School
+                          color: '#64b5f6'
+                        - entity: calendar.amit
+                          name: Amit
+                          color: '#81c784'
+                        - entity: calendar.lior
+                          name: Lior
+                          color: '#ffd54f'
+                        - entity: calendar.noam
+                          name: Noam
+                          color: '#ba68c8'
+                      showDatePerEvent: false
+                      showEventDate: true
+                      eventDateFormat: HH:mm
+                      showFullDayProgress: false
+                      showNoEventsForToday: false
+                      showAllDayHours: false
+                      showHiddenText: true
+                      showProgressBar: false
+                      noEventText: Nothing today
+                  - type: conditional
+                    conditions:
+                      - entity: input_select.family_calendar_selected_day
+                        state: '5'
+                    card:
+                      type: custom:atomic-calendar-revive
+                      name: Daily Calendar
+                      enableModeChange: false
+                      firstDayOfWeek: 1
+                      maxDaysToShow: 1
+                      startDaysAhead: 5
+                      showWeekDay: true
+                      showEventIcon: true
+                      refreshInterval: 180
+                      entities:
+                        - entity: calendar.efrat_and_mor
+                          name: Efrat and Mor
+                          color: '#e57373'
+                        - entity: calendar.noam_s_schedule
+                          name: Noam School
+                          color: '#64b5f6'
+                        - entity: calendar.amit
+                          name: Amit
+                          color: '#81c784'
+                        - entity: calendar.lior
+                          name: Lior
+                          color: '#ffd54f'
+                        - entity: calendar.noam
+                          name: Noam
+                          color: '#ba68c8'
+                      showDatePerEvent: false
+                      showEventDate: true
+                      eventDateFormat: HH:mm
+                      showFullDayProgress: false
+                      showNoEventsForToday: false
+                      showAllDayHours: false
+                      showHiddenText: true
+                      showProgressBar: false
+                      noEventText: Nothing today
+                  - type: conditional
+                    conditions:
+                      - entity: input_select.family_calendar_selected_day
+                        state: '6'
+                    card:
+                      type: custom:atomic-calendar-revive
+                      name: Daily Calendar
+                      enableModeChange: false
+                      firstDayOfWeek: 1
+                      maxDaysToShow: 1
+                      startDaysAhead: 6
+                      showWeekDay: true
+                      showEventIcon: true
+                      refreshInterval: 180
+                      entities:
+                        - entity: calendar.efrat_and_mor
+                          name: Efrat and Mor
+                          color: '#e57373'
+                        - entity: calendar.noam_s_schedule
+                          name: Noam School
+                          color: '#64b5f6'
+                        - entity: calendar.amit
+                          name: Amit
+                          color: '#81c784'
+                        - entity: calendar.lior
+                          name: Lior
+                          color: '#ffd54f'
+                        - entity: calendar.noam
+                          name: Noam
+                          color: '#ba68c8'
+                      showDatePerEvent: false
+                      showEventDate: true
+                      eventDateFormat: HH:mm
+                      showFullDayProgress: false
+                      showNoEventsForToday: false
+                      showAllDayHours: false
+                      showHiddenText: true
+                      showProgressBar: false
+                      noEventText: Nothing today
+                  - type: grid
+                    columns: 2
+                    cards:
+                      - type: custom:config-template-card
+                        variables:
+                          - states['input_text.mor_image'].state
+                        entities:
+                          - ${vars[0]}
+                        card:
+                          type: picture
+                          image: ${vars[0]}
+                          tap_action:
+                            action: navigate
+                            navigation_path: /lovelace-tablet/mor
+                          hold_action:
+                            action: more-info
+                      - type: custom:config-template-card
+                        variables:
+                          - states['input_text.efrat_image'].state
+                        entities:
+                          - ${vars[0]}
+                        card:
+                          type: picture
+                          image: ${vars[0]}
+                          tap_action:
+                            action: navigate
+                            navigation_path: /lovelace-tablet/efrat
+                          hold_action:
+                            action: more-info
+                      - type: conditional
+                        conditions:
+                          - condition: state
+                            entity: input_boolean.is_morning
+                            state: 'on'
+                        card:
+                          aspect_ratio: 100%
+                          entity: script.morning_button_script
+                          name: Good Morning
+                          show_state: false
+                          state_image:
+                            'off': /local/images/sunrise.jpeg
+                            'on': /local/images/sunrise.jpeg
+                          tap_action:
+                            action: toggle
+                          type: picture-entity
+                      - type: custom:weather-card
+                        entity: weather.pirateweather
+              - type: vertical-stack
+                cards:
+                  - type: horizontal-stack
+                    cards:
+                      - type: heading
+                        icon: ''
+                        heading: ⭐ Lior
+                        heading_style: title
+                        badges:
+                          - type: entity
+                            entity: sensor.kc_lior_points_earned_daily
+                            show_icon: false
+                            name: ''
+                        card_mod:
+                          style: |
+
+                            ha-card .content.title {
+                              font-size: 24px !important;  /* bigger name */
+                              font-weight: 700;        /* bold the name */
+                            }
+                            ha-card {
+                              --ha-heading-badge-font-size: 22px;
+                              font-weight: 700;
+                            }
+                      - type: heading
+                        icon: ''
+                        heading: ⭐ Noam
+                        heading_style: title
+                        badges:
+                          - type: entity
+                            entity: sensor.kc_noam_points_earned_daily
+                            show_icon: false
+                            name: ''
+                        card_mod:
+                          style: |
+                            ha-card .content.title {
+                              font-size: 24px !important;  /* bigger name */
+                              font-weight: 700;        /* bold the name */
+                            }
+                            ha-card {
+                              --ha-heading-badge-font-size: 22px;
+                              font-weight: 700;
+                            }
+                  - type: custom:digital-clock
+                    locale: he
+                    dateFormat:
+                      weekday: long
+                      day: 2-digit
+                      month: long
+                    timeFormat:
+                      hour: 2-digit
+                      minute: 2-digit
+                  - type: tile
+                    entity: input_datetime.last_dog_food_time
+                    name: ג'ט קיבלה אוכל
+                    features_position: bottom
+                    vertical: false
+                  - type: custom:time-grid-calendar-card
+                    entities:
+                      - calendar.efrat_and_mor
+                      - calendar.noam_s_schedule
+                      - calendar.amit
+                      - calendar.lior
+                      - calendar.noam
+                    colors:
+                      calendar.noam: '#ba68c8'
+                      calendar.efrat_and_mor: '#e57373'
+                      calendar.lior: '#ffd54f'
+                      calendar.noam_s_schedule: '#64b5f6'
+                      calendar.amit: '#81c784'
+                    minTime: '06:00:00'
+                    maxTime: '22:00:00'
+                    slotDuration: '00:30:00'
+                    nowIndicator: true
+                    scrollTime: '07:00:00'
+                    slotEventOverlap: true
+                    cacheMinutes: 10
+                    suppressDuplicates: true
+                    todayOnly: true
+                    height: 300
